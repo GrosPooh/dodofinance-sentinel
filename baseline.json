@@ -27,6 +27,6 @@
     "expected_names": ["dodofinance.io", "www.dodofinance.io"]
   },
   "cert_renewal_warn_days": 14,
-  "gandi_pat_expiry": null,
+  "gandi_pat_expiry": "2027-07-07",
   "alert_throttle_minutes": 60
 }
