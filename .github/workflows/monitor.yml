@@ -1,0 +1,45 @@
+name: sentinel
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"   # minimum GitHub ; jitter réel 5-15 min sous charge
+  workflow_dispatch:
+
+permissions:
+  contents: write   # commit du state (dernier id crt.sh, throttle alertes, heartbeat)
+
+concurrency:
+  group: sentinel
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Run sentinel
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }}
+        run: python monitor.py
+
+      - name: Persist state
+        if: always()
+        run: |
+          git config user.name "sentinel-bot"
+          git config user.email "sentinel-bot@users.noreply.github.com"
+          git add state/
+          if ! git diff --cached --quiet; then
+            git pull --rebase --autostash origin main
+            git commit -m "state: $(date -u +%FT%TZ)"
+            git push
+          fi

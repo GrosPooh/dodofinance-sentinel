@@ -1,0 +1,32 @@
+{
+  "domain": "dodofinance.io",
+  "authoritative_ns": [
+    "ns-31-a.gandi.net.",
+    "ns-225-b.gandi.net.",
+    "ns-144-c.gandi.net."
+  ],
+  "parent_ns": "a0.nic.io",
+  "records": {
+    "apex_a": ["51.210.2.223"],
+    "www_cname": "grospooh.github.io.",
+    "mx": ["0 dodofinance-io.mail.protection.outlook.com."],
+    "caa": [
+      "0 issue \"letsencrypt.org\"",
+      "0 iodef \"mailto:security@dodoit.fr\""
+    ],
+    "ds": [
+      "53975 13 2 4bc2009bf71e0e8973723dd714e60267b916080da35a1fd1394e48776faf4c1b"
+    ]
+  },
+  "rdap": {
+    "registrar_contains": "gandi",
+    "expect_status": ["client transfer prohibited"]
+  },
+  "ct": {
+    "expected_issuers": ["let's encrypt"],
+    "expected_names": ["dodofinance.io", "www.dodofinance.io"]
+  },
+  "cert_renewal_warn_days": 14,
+  "gandi_pat_expiry": null,
+  "alert_throttle_minutes": 60
+}
