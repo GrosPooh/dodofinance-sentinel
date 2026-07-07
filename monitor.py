@@ -32,6 +32,7 @@ import datetime as dt
 import json
 import os
 import sys
+import time
 from pathlib import Path
 
 import dns.flags
@@ -213,16 +214,37 @@ class Sentinel:
 
     # ----------------------------------------------------------------- RDAP
 
+    def _flaky_source_failed(self, source: str, error: str, threshold: int = 6):
+        """Source externe flaky (RDAP, crt.sh) : WARNING seulement après
+        `threshold` échecs CONSÉCUTIFS (~30 min à la cadence 5 min)."""
+        streaks = self.state.setdefault("fail_streaks", {})
+        streaks[source] = streaks.get(source, 0) + 1
+        msg = f"{source} injoignable ({streaks[source]}e échec consécutif) : {error}"
+        if streaks[source] >= threshold:
+            self.add(SEV_WARNING, f"{source}:down", msg)
+        else:
+            print(f"[transient] {msg}")
+
+    def _flaky_source_ok(self, source: str):
+        self.state.setdefault("fail_streaks", {}).pop(source, None)
+
     def check_rdap(self):
         exp = self.baseline["rdap"]
-        try:
-            r = requests.get(f"https://rdap.org/domain/{self.domain}",
-                             headers={"Accept": "application/rdap+json"}, timeout=20)
-            r.raise_for_status()
-            data = r.json()
-        except Exception as e:  # noqa: BLE001
-            self.add(SEV_WARNING, "rdap:fetch", f"RDAP injoignable : {e}")
+        data = None
+        errors = []
+        for url in (f"https://rdap.identitydigital.services/rdap/domain/{self.domain}",
+                    f"https://rdap.org/domain/{self.domain}"):
+            try:
+                r = requests.get(url, headers={"Accept": "application/rdap+json"}, timeout=20)
+                r.raise_for_status()
+                data = r.json()
+                break
+            except Exception as e:  # noqa: BLE001
+                errors.append(f"{url} → {e}")
+        if data is None:
+            self._flaky_source_failed("rdap", " ; ".join(errors))
             return
+        self._flaky_source_ok("rdap")
 
         status = [s.lower() for s in data.get("status", [])]
         for expected_status in exp["expect_status"]:
@@ -248,9 +270,17 @@ class Sentinel:
                      f"NS côté registre (RDAP) : {sorted(registry_ns)} "
                      f"(attendu {sorted(norm_set(self.baseline['authoritative_ns']))})")
 
-        if not data.get("secureDNS", {}).get("delegationSigned", False):
+        secure = data.get("secureDNS", {})
+        if not secure.get("delegationSigned", False):
             self.add(SEV_CRITICAL, "rdap:dnssec",
                      "RDAP : délégation NON signée (DNSSEC désactivé au registre ?)")
+        else:
+            rdap_ds = {norm(f"{d.get('keyTag')} {d.get('algorithm')} {d.get('digestType')} {d.get('digest')}")
+                       for d in secure.get("dsData", [])}
+            if rdap_ds and rdap_ds != norm_set(self.baseline["records"]["ds"]):
+                self.add(SEV_CRITICAL, "rdap:ds",
+                         f"DS côté registre (RDAP) : {sorted(rdap_ds)} "
+                         f"(attendu {sorted(norm_set(self.baseline['records']['ds']))})")
 
     # ---------------------------------------------------- Certificate Transparency
 
@@ -258,15 +288,23 @@ class Sentinel:
         exp = self.baseline["ct"]
         entries: dict[int, dict] = {}
         for q in (self.domain, f"%.{self.domain}"):
-            try:
-                r = requests.get("https://crt.sh/",
-                                 params={"q": q, "output": "json"}, timeout=30)
-                r.raise_for_status()
-                for e in r.json():
-                    entries[int(e["id"])] = e
-            except Exception as e:  # noqa: BLE001
-                self.add(SEV_WARNING, "ct:fetch", f"crt.sh injoignable ({q}) : {e}")
+            data, last_error = None, None
+            for attempt in range(2):  # crt.sh est notoirement flaky → 1 retry
+                try:
+                    r = requests.get("https://crt.sh/",
+                                     params={"q": q, "output": "json"}, timeout=30)
+                    r.raise_for_status()
+                    data = r.json()
+                    break
+                except Exception as e:  # noqa: BLE001
+                    last_error = e
+                    time.sleep(3)
+            if data is None:
+                self._flaky_source_failed("crt.sh", f"({q}) {last_error}")
                 return  # pas de conclusion sans données complètes
+            for e in data:
+                entries[int(e["id"])] = e
+        self._flaky_source_ok("crt.sh")
 
         if not entries:
             return
