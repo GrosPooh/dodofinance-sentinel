@@ -357,6 +357,85 @@ class Sentinel:
 
     # ------------------------------------------------------------ PAT Gandi
 
+    def check_bundle_integrity(self):
+        """Item 5 (niveau 1) - integrite du bundle frontend SERVI.
+
+        Compare ce que https://dodofinance.io sert (index.html + assets +
+        sw.js...) au manifeste SIGNE publie au deploiement (integrity.json,
+        genere par scripts/integrity-snapshot.py depuis le poste de dev - la
+        cle de release ne touche JAMAIS la VM). Verifie d'abord la signature
+        Ed25519 avec la pubkey EPINGLEE dans baseline.json (jamais celle du
+        fichier). Divergence = bundle modifie hors deploiement legitime =
+        possible compromission ACTIVE (un JS piege peut exfiltrer les cles
+        utilisateur a la connexion) -> CRITICAL.
+
+        Tant que l'allowlist L3 de la VM bloque le runner GitHub, le fetch
+        echoue au niveau connexion -> le check se met en veille (note, pas
+        d'alerte) et s'armera tout seul a l'ouverture publique. Un deploiement
+        frontend legitime SANS re-snapshot fait crier ce check - c'est voulu
+        (meme doctrine que la baseline DNS) : relancer integrity-snapshot.py
+        + deploy-sentinel.sh apres chaque deploiement frontend.
+        """
+        integrity_path = ROOT / "integrity.json"
+        pubkey_b64 = self.baseline.get("release_pubkey_b64")
+        if not integrity_path.exists() or not pubkey_b64:
+            print("[note] integrity.json / release_pubkey_b64 absents - check bundle desactive")
+            return
+
+        import base64
+        import hashlib
+        try:
+            from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+        except ImportError:
+            self.add(SEV_WARNING, "bundle:no-cryptography",
+                     "cryptography absent des requirements - check d'integrite du bundle inoperant")
+            return
+
+        doc = load_json(integrity_path, None)
+        if not doc or "payload" not in doc or "signature_b64" not in doc:
+            self.add(SEV_WARNING, "bundle:bad-manifest", "integrity.json illisible/incomplet")
+            return
+
+        # 1. Signature du manifeste (pubkey epinglee baseline - anti-faux manifeste)
+        canonical = json.dumps(doc["payload"], sort_keys=True, separators=(",", ":")).encode("utf-8")
+        try:
+            Ed25519PublicKey.from_public_bytes(base64.b64decode(pubkey_b64)).verify(
+                base64.b64decode(doc["signature_b64"]), canonical,
+            )
+        except Exception:
+            self.add(SEV_CRITICAL, "bundle:bad-signature",
+                     "Signature du manifeste d'integrite INVALIDE - manifeste altere ou mauvaise cle")
+            return
+
+        base_url = doc["payload"].get("base_url", f"https://{self.domain}")
+        files = doc["payload"].get("files", {})
+
+        # 2. Joignabilite (allowlist L3 -> veille silencieuse)
+        try:
+            r0 = requests.get(base_url + "/", timeout=15)
+            r0.raise_for_status()
+        except Exception as e:
+            print(f"[note] app injoignable depuis le runner ({e}) - check bundle en veille (allowlist)")
+            return
+
+        # 3. Comparaison servi vs manifeste
+        mismatches = []
+        for path, expected in sorted(files.items()):
+            try:
+                content = r0.content if path == "/" else requests.get(base_url + path, timeout=15).content
+            except Exception:
+                mismatches.append(f"{path} (injoignable)")
+                continue
+            if hashlib.sha256(content).hexdigest() != expected:
+                mismatches.append(path)
+        if mismatches:
+            self.add(SEV_CRITICAL, "bundle:mismatch",
+                     f"BUNDLE SERVI != MANIFESTE SIGNE ({len(mismatches)} fichier(s) : "
+                     f"{', '.join(mismatches[:5])}) - si deploiement recent : relancer "
+                     "integrity-snapshot.py + deploy-sentinel.sh ; SINON possible compromission active")
+        else:
+            print(f"[ok] bundle servi conforme au manifeste signe ({len(files)} fichiers)")
+
     def check_pat_expiry(self):
         expiry = self.baseline.get("gandi_pat_expiry")
         if not expiry:
@@ -436,6 +515,7 @@ class Sentinel:
         self.check_parent_registry()
         self.check_rdap()
         self.check_ct()
+        self.check_bundle_integrity()
         self.check_pat_expiry()
         has_critical = self.dispatch_alerts()
         self.heartbeat()
