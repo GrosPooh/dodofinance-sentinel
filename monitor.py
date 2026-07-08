@@ -397,7 +397,7 @@ class Sentinel:
             return
 
         # 1. Signature du manifeste (pubkey epinglee baseline - anti-faux manifeste)
-        canonical = json.dumps(doc["payload"], sort_keys=True, separators=(",", ":")).encode("utf-8")
+        canonical = json.dumps(doc["payload"], sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
         try:
             Ed25519PublicKey.from_public_bytes(base64.b64decode(pubkey_b64)).verify(
                 base64.b64decode(doc["signature_b64"]), canonical,
