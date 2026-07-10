@@ -34,7 +34,8 @@
     ],
     "expected_names": [
       "dodofinance.io",
-      "www.dodofinance.io"
+      "www.dodofinance.io",
+      "app-beta.dodofinance.io"
     ]
   },
   "cert_renewal_warn_days": 14,
