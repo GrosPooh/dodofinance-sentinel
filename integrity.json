@@ -2,7 +2,7 @@
   "payload": {
     "version": 1,
     "base_url": "https://dodofinance.io",
-    "generated_at": "2026-07-11T01:53:33.992879+00:00",
+    "generated_at": "2026-07-11T02:01:45.423250+00:00",
     "entry": {
       "js": [
         "/assets/index-BLqExoXJ.js"
@@ -147,9 +147,12 @@
       "/assets/PersonnesSocietes-Cs8hZtSt.js": "874d30f00f5275e6d2af8d32a44c7590efe6c5f4db31b19cf8d8415cd1911bfb",
       "/assets/Donnees-CoyNvb6_.js": "9eeec982e0e0a39561b463cc88d5b1c10575b10b5c5a87f56e7be8235b5ca3c4",
       "/assets/MonCompte-C6JyosEi.js": "4e5d113ece8e11e8d569334b9e177671b1c95897453dd974850036116752377a",
+      "/assets/index.esm-c5goIuFU.js": "d64ef86dd7ba6061936239496ca0f6c776928c2b355b7df5ee749b6cacd529e9",
       "/assets/index-sbOip_vc.js": "83a8dff22fb08886337b3158884889bc21cff319464c2dbd68d16f6d9d0995f8",
+      "/assets/index.esm-BYu_vxbj.js": "0ebf362aa69b71e4a89620fc5aadc80166d230d2b463f5c6dc7243bc4d1cdbc0",
+      "/assets/index.esm-bdamX4EN.js": "0f94bf1d805e3469f40b5c6b431664658d55c83edbafa5509021457660f38e4a",
       "/assets/jszip.min-C_F8ml7d.js": "a095cbce18e000bbcca0304c207b78ceca102f0f5bdbb3da88cb278369c6bfc6"
     }
   },
-  "signature_b64": "Dwmxwj3qnB9ZmOGtW/ME+bJzOBKLU5Kob4iWPJSMtiRyCAAq1jhgHlMxCcdqmGmwhD/UYXxmRgI03e5SBHSJDw=="
+  "signature_b64": "45u0XWZUb60TIoEkCmX8Frsa/CyzRDEiVmNAqt2voZF8uiEtmnBvG/5ZQ0qrKhuyIXu/l/837FAiZY3h5dmcCg=="
 }
