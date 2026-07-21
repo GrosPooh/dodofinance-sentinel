@@ -42,5 +42,17 @@
   "cert_renewal_warn_days": 14,
   "gandi_pat_expiry": "2027-07-07",
   "alert_throttle_minutes": 60,
-  "release_pubkey_b64": "w+71tS0qKCmr1Jo4RDcSE/0gvq1+Wsy9h8tNTUpGUwQ="
+  "release_pubkey_b64": "w+71tS0qKCmr1Jo4RDcSE/0gvq1+Wsy9h8tNTUpGUwQ=",
+  "bootstrap": {
+    "origin": "https://dodofinance.io",
+    "files": {
+      "/": "1e2d15396e4085ad569553d8c9c0d7d74a93d35aa8035dd16a869dcefef775dc",
+      "/boot.js": "564532d2338d758e1b2c936c3c53a89331ab123b87c3165264b43207d55d4393",
+      "/sw.js": "70d04eec7194f8ecb74a0c8d77383d906577c0641f75d9d42e279755fa0187e9",
+      "/verify.mjs": "9bec6d24f6d8a09df586020680534d7b89440cb7cf89cb9eab12b124dd245db8",
+      "/config.mjs": "ccee3602d68343dce75f48bb62e2fa5bb3a979bc345e1a25b8b29ca1481d5e40",
+      "/vendor/noble-ed25519.mjs": "70cebecaaa6a126ced702198706c49d03f2d6f70317342b75e50e8d2d4951fe5",
+      "/manifest.json": "378184b20ae72698241bd3bb87b0eeedaf51a353ec86323a83cadf0aa7a4cfd0"
+    }
+  }
 }

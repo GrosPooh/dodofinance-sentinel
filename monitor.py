@@ -436,6 +436,54 @@ class Sentinel:
         else:
             print(f"[ok] bundle servi conforme au manifeste signe ({len(files)} fichiers)")
 
+    def check_bootstrap_files(self):
+        """Epinglage des fichiers du SERVEUR A (bootstrap) — item 5 niveau 2,
+        dernier morceau de N2-3.
+
+        A est l'ANCRE de confiance : le SW verificateur qu'il sert ne peut pas
+        se verifier lui-meme. Ce check compare les fichiers SERVIS par A aux
+        hashes figes dans baseline.json["bootstrap"] (poses par
+        scripts/pin-bootstrap.py apres chaque redeploiement legitime de A).
+        Divergence -> CRITICAL : modification de l'ancre (compromission de A,
+        hijack DNS vers un faux A, ou redeploiement legitime sans re-pin).
+        A est PUBLIC (pas d'allowlist) -> le check est arme en permanence.
+        """
+        import hashlib
+        boot = self.baseline.get("bootstrap")
+        if not boot or not boot.get("files"):
+            print("[note] baseline sans section bootstrap - check A desactive "
+                  "(lancer scripts/pin-bootstrap.py)")
+            return
+        origin = boot.get("origin", f"https://{self.domain}")
+        mismatches = []
+        fetch_errors = []
+        for path, expected in sorted(boot["files"].items()):
+            try:
+                # Redirections refusees : suivre un 301 = hasher un AUTRE
+                # serveur (lecon de l'incident snapshot du 2026-07-21).
+                r = requests.get(origin + path, timeout=15, allow_redirects=False)
+                if r.status_code != 200:
+                    fetch_errors.append(f"{path} (HTTP {r.status_code})")
+                    continue
+            except Exception as e:  # noqa: BLE001
+                fetch_errors.append(f"{path} ({e})")
+                continue
+            if hashlib.sha256(r.content).hexdigest() != expected:
+                mismatches.append(path)
+        if mismatches:
+            self.add(SEV_CRITICAL, "bootstrap:mismatch",
+                     f"FICHIER(S) DU SERVEUR A MODIFIES ({', '.join(mismatches)}) - "
+                     "si redeploiement recent de A : relancer pin-bootstrap.py + "
+                     "deploy-sentinel.sh ; SINON compromission de l'ANCRE (A/DNS/CA) "
+                     "- traiter en incident immediatement")
+            self._flaky_source_ok("bootstrap-fetch")
+        elif fetch_errors:
+            # A injoignable = app down pour tout le monde -> seuil court.
+            self._flaky_source_failed("bootstrap-fetch", ", ".join(fetch_errors), threshold=3)
+        else:
+            self._flaky_source_ok("bootstrap-fetch")
+            print(f"[ok] serveur A conforme aux hashes epingles ({len(boot['files'])} fichiers)")
+
     def check_pat_expiry(self):
         expiry = self.baseline.get("gandi_pat_expiry")
         if not expiry:
@@ -516,6 +564,7 @@ class Sentinel:
         self.check_rdap()
         self.check_ct()
         self.check_bundle_integrity()
+        self.check_bootstrap_files()
         self.check_pat_expiry()
         has_critical = self.dispatch_alerts()
         self.heartbeat()
