@@ -1,10 +1,11 @@
 {
   "alerts": {
-    "crt.sh:down": "2026-08-20T17:15:15.034250+00:00"
+    "crt.sh:down": "2026-08-20T18:19:10.364458+00:00",
+    "vantage-error:resolver:quad9": "2026-08-20T18:19:10.319784+00:00"
   },
   "ct_last_id": 28127940069,
   "fail_streaks": {
-    "crt.sh": 59
+    "crt.sh": 60
   },
   "last_heartbeat": "2026-08-18T12:36:55.932518+00:00"
 }
