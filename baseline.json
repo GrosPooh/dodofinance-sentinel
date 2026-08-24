@@ -46,7 +46,7 @@
   "bootstrap": {
     "origin": "https://dodofinance.io",
     "files": {
-      "/": "1e2d15396e4085ad569553d8c9c0d7d74a93d35aa8035dd16a869dcefef775dc",
+      "/": "582f8e38bb53ca9b79a630c0c5aa27217596d3fa7cedfc949d72d4cd560d5e50",
       "/boot.js": "564532d2338d758e1b2c936c3c53a89331ab123b87c3165264b43207d55d4393",
       "/sw.js": "70d04eec7194f8ecb74a0c8d77383d906577c0641f75d9d42e279755fa0187e9",
       "/verify.mjs": "9bec6d24f6d8a09df586020680534d7b89440cb7cf89cb9eab12b124dd245db8",
