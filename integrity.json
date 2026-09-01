@@ -2,7 +2,7 @@
   "payload": {
     "version": 1,
     "base_url": "https://static.dodofinance.io",
-    "generated_at": "2026-09-01T16:39:54.873137+00:00",
+    "generated_at": "2026-09-01T22:34:04.544022+00:00",
     "entry": {
       "js": [
         "/assets/index-D1mAsciD.js"
@@ -167,5 +167,5 @@
       "/assets/jszip.min-C_F8ml7d.js": "a095cbce18e000bbcca0304c207b78ceca102f0f5bdbb3da88cb278369c6bfc6"
     }
   },
-  "signature_b64": "znCkEHAQNyCYkQRDOB/vlNcgChzw5ygoUkciL4+k8+9qg0ietarWnsWqalp1JbswMAnZjSMrRK2Pi3wiy4IyAQ=="
+  "signature_b64": "LkIXy5AifucM60cQde6oIH77ZEQsenX5KTf7e2u3CVrNReVnWosfNvwAxRcwElC2DOaPdy1tWmgHHvR7zUS+BQ=="
 }
