@@ -1,8 +1,8 @@
 {
-  "alerts": {},
-  "ct_last_id": 29554903096,
-  "fail_streaks": {
-    "crt.sh": 1
+  "alerts": {
+    "cert:renewal-late:static.dodofinance.io": "2026-09-26T01:56:05.224251+00:00"
   },
+  "ct_last_id": 29554903096,
+  "fail_streaks": {},
   "last_heartbeat": "2026-09-22T18:05:36.860650+00:00"
 }
