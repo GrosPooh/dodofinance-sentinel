@@ -1,6 +1,6 @@
 {
   "alerts": {
-    "cert:renewal-late:static.dodofinance.io": "2026-09-28T20:13:31.066152+00:00"
+    "cert:renewal-late:static.dodofinance.io": "2026-09-29T00:25:12.581322+00:00"
   },
   "ct_last_id": 29554903096,
   "fail_streaks": {},
