@@ -14,14 +14,18 @@ Tourne dans GitHub Actions (repo public dédié, schedule */5 min). Vérifie :
   3. Délégation NS au registre .io en direct.
   4. RDAP : registrar, verrou transfert, NS côté registre, DNSSEC signé.
   5. crt.sh : tout nouveau certificat → INFO si émetteur/SAN attendus
-     (renouvellement LE normal), CRITICAL sinon. + Renouvellement en retard
-     (NotAfter du cert le plus récent < N jours) — couvre l'apex que le runner
-     ne peut PAS joindre en TLS (allowlist L3 sur la VM).
+     (renouvellement LE normal), CRITICAL sinon.
+  5 bis. Certificat réellement SERVI (TLS direct sur chaque nom attendu) :
+     invalide ou expirant sous N jours → CRITICAL. Remplace l'ancien contrôle
+     « renouvellement en retard » calculé depuis crt.sh, qui avait deux
+     défauts (2026-09-30) : crt.sh indexe avec des semaines de retard (fausse
+     alarme sur un cert déjà renouvelé), et un cert renouvelé sur disque mais
+     jamais chargé par le serveur (nginx non rechargé) lui était invisible.
   6. Expiration du PAT Gandi (date statique dans baseline.json — le jeton
      lui-même n'est JAMAIS stocké ici : repo public).
 
-Alertes : ntfy.sh (topic secret NTFY_TOPIC) ; CRITICAL ajoute un email direct
-(X-Email → ALERT_EMAIL, adresse hors dodofinance.io) et fait échouer le job
+Alertes : ntfy.sh (topic secret NTFY_TOPIC, publication JSON) ; CRITICAL ajoute
+un email direct (champ email → ALERT_EMAIL, adresse hors dodofinance.io) et fait échouer le job
 (exit 1) → notification GitHub native en 2e canal. Throttle 60 min par anomalie.
 Heartbeat hebdo (preuve de vie + garde le cron GitHub actif).
 """
@@ -333,27 +337,48 @@ class Sentinel:
                              f"CERTIFICAT INATTENDU dans les logs CT — {desc}")
         self.state["ct_last_id"] = max_id
 
-        # Renouvellement en retard : NotAfter du cert le plus récent par nom attendu.
-        # (Le runner ne peut PAS joindre l'apex en TLS : allowlist L3 sur la VM.)
+        # L'expiration n'est PLUS jugée ici (index crt.sh en retard de plusieurs
+        # semaines) : cf. check_served_certs, qui lit le cert réellement servi.
+
+    # ------------------------------------------------------ certificat servi
+
+    def check_served_certs(self):
+        """Certificat que les visiteurs reçoivent VRAIMENT, nom par nom.
+
+        Vérification TLS complète (chaîne + nom) : un échec de vérification
+        (expiré, mauvais nom, émetteur non reconnu) est CRITICAL ; une
+        expiration sous `cert_renewal_warn_days` aussi. Une connexion qui
+        échoue est traitée comme une source flaky (WARNING après 6 échecs)."""
+        import socket
+        import ssl
+
         warn_days = self.baseline["cert_renewal_warn_days"]
-        for name in expected_names:
-            newest = None
-            for e in entries.values():
-                if name in norm_set(e.get("name_value", "").split("\n")):
-                    na = dt.datetime.fromisoformat(e["not_after"]).replace(tzinfo=dt.timezone.utc)
-                    newest = na if newest is None or na > newest else newest
-            if newest is None:
+        ctx = ssl.create_default_context()
+        for name in sorted(norm_set(self.baseline["ct"]["expected_names"])):
+            source = f"tls:{name}"
+            try:
+                with socket.create_connection((name, 443), timeout=15) as sock:
+                    with ctx.wrap_socket(sock, server_hostname=name) as tls:
+                        cert = tls.getpeercert()
+            except ssl.SSLCertVerificationError as e:
+                self._flaky_source_ok(source)
+                self.add(SEV_CRITICAL, f"cert:invalid:{name}",
+                         f"Certificat servi INVALIDE pour {name} : {e.verify_message or e}")
                 continue
-            days_left = (newest - now_utc()).days
-            if days_left < 0:
-                self.add(SEV_CRITICAL, f"cert:expired:{name}",
-                         f"Le cert le plus récent pour {name} est EXPIRÉ depuis {-days_left} j "
-                         "et aucun successeur n'apparaît dans les logs CT")
-            elif days_left < warn_days:
-                self.add(SEV_CRITICAL, f"cert:renewal-late:{name}",
-                         f"Renouvellement en retard pour {name} : le cert le plus récent expire "
-                         f"dans {days_left} j et aucun successeur dans les logs CT "
-                         "(panne Traefik/PAT Gandi ou GitHub Pages ?)")
+            except OSError as e:
+                self._flaky_source_failed(source, str(e))
+                continue
+            self._flaky_source_ok(source)
+            not_after = dt.datetime.fromtimestamp(ssl.cert_time_to_seconds(cert["notAfter"]),
+                                                  tz=dt.timezone.utc)
+            days_left = (not_after - now_utc()).days
+            if days_left < warn_days:
+                self.add(SEV_CRITICAL, f"cert:served-expiring:{name}",
+                         f"Le certificat SERVI pour {name} expire dans {days_left} j "
+                         f"({not_after:%Y-%m-%d}) : renouvellement en panne, ou "
+                         "renouvelé mais pas rechargé par le serveur ?")
+            else:
+                print(f"[ok] {name} : certificat servi valide jusqu'au {not_after:%Y-%m-%d}")
 
     # ------------------------------------------------------------ PAT Gandi
 
@@ -500,18 +525,35 @@ class Sentinel:
 
     # ------------------------------------------------------------- alerting
 
+    _NTFY_PRIORITY = {"min": 1, "low": 2, "default": 3, "high": 4, "urgent": 5}
+
     def notify(self, title: str, message: str, priority: str, tags: str, email: bool):
+        """Publication JSON (https://docs.ntfy.sh/publish/#publish-as-json).
+
+        ⚠ Jamais le titre en en-tête HTTP : les en-têtes sont limités au
+        latin-1, et nos titres contiennent « — » et des emojis → chaque envoi
+        levait une exception AVANT de partir. Bug réel : aucune notification
+        (ni alerte, ni preuve de vie) n'est arrivée jusqu'au 2026-09-30."""
         topic = os.environ.get("NTFY_TOPIC", "").strip()
         if not topic:
             print(f"[no-ntfy] {title} — {message}")
             return
-        headers = {"Title": title, "Priority": priority, "Tags": tags}
+        payload = {
+            "topic": topic,
+            "title": title,
+            "message": message,
+            "priority": self._NTFY_PRIORITY.get(priority, 3),
+            "tags": [t for t in tags.split(",") if t],
+        }
         alert_email = os.environ.get("ALERT_EMAIL", "").strip()
         if email and alert_email:
-            headers["X-Email"] = alert_email
+            payload["email"] = alert_email
         try:
-            requests.post(f"https://ntfy.sh/{topic}", data=message.encode("utf-8"),
-                          headers=headers, timeout=10)
+            r = requests.post("https://ntfy.sh/", json=payload, timeout=10)
+            if r.status_code >= 300:
+                print(f"[ntfy-error] HTTP {r.status_code} : {r.text[:200]}")
+            else:
+                print(f"[ntfy] envoyé : {title}")
         except Exception as e:  # noqa: BLE001
             print(f"[ntfy-error] {e}")
 
@@ -563,6 +605,7 @@ class Sentinel:
         self.check_parent_registry()
         self.check_rdap()
         self.check_ct()
+        self.check_served_certs()
         self.check_bundle_integrity()
         self.check_bootstrap_files()
         self.check_pat_expiry()
