@@ -1,8 +1,8 @@
 {
-  "alerts": {
-    "ct:renewal:29646495838": "2026-10-05T00:12:55.013842+00:00"
-  },
+  "alerts": {},
   "ct_last_id": 29646495838,
-  "fail_streaks": {},
+  "fail_streaks": {
+    "crt.sh": 1
+  },
   "last_heartbeat": "2026-09-29T18:18:01.436055+00:00"
 }
