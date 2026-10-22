@@ -3,13 +3,13 @@
 # Dependabot évaluent le MINIMUM des plages (cryptography>=42 → alerte CVE,
 # idna 3.9 → alerte) alors que pip installe du récent. Versions relevées le
 # 2026-09-30 (python:3.12) ; suivi des bumps par Dependabot.
-dnspython==2.8.0
+dnspython==2.9.0
 requests==2.34.2
-cryptography==50.0.0
+cryptography==50.0.2
 # transitives
-certifi==2026.7.22
+certifi==2026.10.19
 cffi==2.1.1
-charset-normalizer==3.5.1
+charset-normalizer==3.5.2
 idna==3.20
-pycparser==3.0
+pycparser==3.11
 urllib3==2.8.0
