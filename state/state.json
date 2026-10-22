@@ -1,10 +1,6 @@
 {
-  "alerts": {
-    "crt.sh:down": "2026-10-21T21:36:48.090480+00:00"
-  },
+  "alerts": {},
   "ct_last_id": 29783580056,
-  "fail_streaks": {
-    "crt.sh": 17
-  },
+  "fail_streaks": {},
   "last_heartbeat": "2026-10-20T20:55:57.054951+00:00"
 }
