@@ -7,9 +7,9 @@ dnspython==2.9.0
 requests==2.34.2
 cryptography==50.0.2
 # transitives
-certifi==2026.10.19
+certifi==2026.10.23
 cffi==2.1.1
 charset-normalizer==3.5.2
 idna==3.20
-pycparser==3.11
+pycparser==3.12
 urllib3==2.8.0
