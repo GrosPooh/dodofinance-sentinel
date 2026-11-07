@@ -313,7 +313,10 @@ class Sentinel:
         if not entries:
             return
 
-        expected_names = norm_set(exp["expected_names"])
+        # Noms admis dans les logs CT sans être sondés par check_served_certs
+        # (préprod : son 443 est fermé au runner, la sonder ferait une alerte
+        # « source injoignable » à chaque passage). L'émetteur reste contrôlé.
+        expected_names = norm_set(exp["expected_names"]) | norm_set(exp.get("ct_only_names", []))
         expected_issuers = [i.lower() for i in exp["expected_issuers"]]
 
         last_id = self.state.get("ct_last_id")
@@ -380,7 +383,7 @@ class Sentinel:
             else:
                 print(f"[ok] {name} : certificat servi valide jusqu'au {not_after:%Y-%m-%d}")
 
-    # ------------------------------------------------------------ PAT Gandi
+    # ------------------------------------------------- intégrité du bundle
 
     def check_bundle_integrity(self):
         """Item 5 (niveau 1) - integrite du bundle frontend SERVI.

@@ -13,7 +13,7 @@ l'infrastructure surveillée, et alerte par des canaux indépendants du domaine
 | DS DNSSEC | résolveurs publics + registre .io en direct | dégradation/substitution DNSSEC |
 | Délégation NS | registre .io en direct (RD=0) | hijack registrar |
 | Statuts + registrar + NS | RDAP | transfert de domaine, verrou levé |
-| Nouveaux certificats | crt.sh | cert frauduleux (couvre aussi le hijack BGP) |
+| Nouveaux certificats | crt.sh | cert frauduleux (couvre aussi le hijack BGP) ; `ct.ct_only_names` = noms admis sans être sondés (préprod, fermée au monde) |
 | NotAfter du cert le plus récent | crt.sh | panne de renouvellement (Traefik ou certbot en HTTP-01, GitHub Pages) |
 
 Un renouvellement Let's Encrypt légitime (émetteur + SAN attendus) part en
