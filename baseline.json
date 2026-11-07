@@ -40,7 +40,6 @@
     ]
   },
   "cert_renewal_warn_days": 14,
-  "gandi_pat_expiry": "2027-07-07",
   "alert_throttle_minutes": 60,
   "release_pubkey_b64": "w+71tS0qKCmr1Jo4RDcSE/0gvq1+Wsy9h8tNTUpGUwQ=",
   "bootstrap": {

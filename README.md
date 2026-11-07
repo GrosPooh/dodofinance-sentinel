@@ -14,8 +14,7 @@ l'infrastructure surveillée, et alerte par des canaux indépendants du domaine
 | Délégation NS | registre .io en direct (RD=0) | hijack registrar |
 | Statuts + registrar + NS | RDAP | transfert de domaine, verrou levé |
 | Nouveaux certificats | crt.sh | cert frauduleux (couvre aussi le hijack BGP) |
-| NotAfter du cert le plus récent | crt.sh | panne de renouvellement (Traefik / PAT Gandi / GitHub Pages) |
-| Expiration PAT Gandi | date statique `baseline.json` | panne HTTPS à venir |
+| NotAfter du cert le plus récent | crt.sh | panne de renouvellement (Traefik ou certbot en HTTP-01, GitHub Pages) |
 
 Un renouvellement Let's Encrypt légitime (émetteur + SAN attendus) part en
 notification INFO ; tout le reste est CRITICAL (push urgent + email + job en
@@ -33,7 +32,7 @@ Secrets du repo (`Settings → Secrets and variables → Actions`) :
 - `ALERT_EMAIL` — adresse email directe pour les CRITICAL (hors dodofinance.io).
 
 `baseline.json` = l'état attendu. Toute modification légitime de l'infra
-(changement d'IP, de MX, rotation DNSSEC, nouveau PAT Gandi) doit être reportée
+(changement d'IP, de MX, rotation DNSSEC) doit être reportée
 ici, sinon le moniteur crie. C'est voulu.
 
 ## Source de vérité

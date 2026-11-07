@@ -509,20 +509,6 @@ class Sentinel:
             self._flaky_source_ok("bootstrap-fetch")
             print(f"[ok] serveur A conforme aux hashes epingles ({len(boot['files'])} fichiers)")
 
-    def check_pat_expiry(self):
-        expiry = self.baseline.get("gandi_pat_expiry")
-        if not expiry:
-            print("[note] gandi_pat_expiry non renseigné dans baseline.json — check désactivé")
-            return
-        days_left = (dt.date.fromisoformat(expiry) - now_utc().date()).days
-        if days_left < 0:
-            self.add(SEV_CRITICAL, "pat:expired",
-                     f"PAT Gandi EXPIRÉ depuis {-days_left} j — le renouvellement des certs va échouer")
-        elif days_left <= 14:
-            self.add(SEV_WARNING, f"pat:expiry:{expiry}",
-                     f"PAT Gandi expire dans {days_left} j ({expiry}) — le régénérer + màj .env VM "
-                     "+ `docker compose up -d traefik` + màj baseline.json")
-
     # ------------------------------------------------------------- alerting
 
     _NTFY_PRIORITY = {"min": 1, "low": 2, "default": 3, "high": 4, "urgent": 5}
@@ -608,7 +594,6 @@ class Sentinel:
         self.check_served_certs()
         self.check_bundle_integrity()
         self.check_bootstrap_files()
-        self.check_pat_expiry()
         has_critical = self.dispatch_alerts()
         self.heartbeat()
 
