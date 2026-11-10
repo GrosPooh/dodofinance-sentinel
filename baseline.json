@@ -48,11 +48,11 @@
   "bootstrap": {
     "origin": "https://dodofinance.io",
     "files": {
-      "/": "54002553437c9d40b22e42a8a131428b870c860a84b575df6bd2c677a0483a8d",
-      "/boot.js": "131da4d4b2ba225a2ff42bde85c36a484e48b5d79d153131fc2509baa44fbb38",
-      "/sw.js": "97c4345fd89dffb58478a0dc363de82c15964d7f6541761c5c8bffe000ce2580",
-      "/verify.mjs": "9bec6d24f6d8a09df586020680534d7b89440cb7cf89cb9eab12b124dd245db8",
-      "/config.mjs": "ccee3602d68343dce75f48bb62e2fa5bb3a979bc345e1a25b8b29ca1481d5e40",
+      "/": "9ffc34c511a1e533ac0ab39cc2381461d83810a544c7c6bb12172e595615c8bd",
+      "/boot.js": "87d54749b9531092f892d43439d23dedeb4b1a71e98163b1a2802cc06114d793",
+      "/sw.js": "8eea9ec813a7c27cfe1386e362b4a9981643695ba0d84b597a1ebf86e1c5d4c3",
+      "/verify.mjs": "59de236f93f56d34ce1f7afc9ce21691ae278b3df58293fa7d077da5f6c0bdb1",
+      "/config.mjs": "750eee844503ae4f227b3d284c8229cc3895f7f9a4e8627f5037785cad3acc76",
       "/vendor/noble-ed25519.mjs": "70cebecaaa6a126ced702198706c49d03f2d6f70317342b75e50e8d2d4951fe5",
       "/manifest.json": "4d9b1f3be9aecbaeb8a3dd3d79946fcd87c1331ca0fde367675ccabaae3a8f84"
     }
