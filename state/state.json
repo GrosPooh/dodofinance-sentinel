@@ -2,7 +2,7 @@
   "alerts": {},
   "ct_last_id": 29783580056,
   "fail_streaks": {
-    "crt.sh": 2
+    "crt.sh": 3
   },
   "last_heartbeat": "2026-11-25T19:33:59.195643+00:00"
 }
